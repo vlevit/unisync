@@ -1,0 +1,64 @@
+#!/bin/bash
+
+location="$USER@$HOSTNAME"      # must be unique for each host
+
+unison_args=(                   # applied for every unison call
+    -batch
+    -backup="Name *"
+    -backuploc=local
+    -backupsuffix='-$VERSION.bak'
+    -maxbackups=2
+    -times
+    -force=newer
+    # ignore list
+    -ignore="Name *~"
+    -ignore="Name #*#"
+    -ignore="Name *.tmp"
+)
+
+
+locations=(user@home user@laptop user@work) # where I am
+remotes=(user@server user@server user@server) # where to sync to
+unison_dirs=($HOME/.unison $HOME/.unison $HOME/.unison)
+
+# variables
+
+SYNC="/home/user/Sync"
+
+# profiles
+
+profile_01=unisyncrc
+local_01=("$HOME/.unisyncrc" "$HOME/.unisyncrc" "$HOME/.unisyncrc")
+remote_01="$SYNC/.unisyncrc"
+
+profile_02=unison
+local_02=("$HOME/.unison" "$HOME/.unison" "$HOME/.unison")
+remote_02="$SYNC/.unison"
+args_02=(-ignore "Name ?*" -ignorenot "Name *.prf")
+
+profile_10=shell
+local_10=("$HOME" "$HOME" "$HOME")
+remote_10="$SYNC/shell"
+args_10=(-path .bashrc -path .bash_profile -path .bash_logout)
+
+profile_20=hg
+local_20=("$HOME/.hgrc" "$HOME/.hgrc" "$HOME/.hgrc")
+remote_20="$SYNC/.hgrc"
+
+profile_21=git
+local_21=("$HOME/.gitconfig" "$HOME/.gitconfig" "$HOME/.gitconfig")
+remote_21="$SYNC/.gitconfig"
+
+profile_30=music
+local_30=("$HOME/Music" "$HOME/Music" "$HOME/home/Music")
+remote_30="$SYNC/Music"
+
+profile_31=documents
+local_31=("$HOME/Docs" "$HOME/Docs" "$HOME/home/Docs")
+remote_31="$SYNC/Docs"
+
+# groups
+
+group_configs=(shell hg git)
+group_vcs_configs=(hg git)
+group_data=(music documents)
