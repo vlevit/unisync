@@ -182,6 +182,11 @@ for profile in "${profiles[@]}" ; do
     done
 done
 
+if [[ -n "$ssh_master" && $dry_run == 0 ]] ;  then
+    ${ssh_master[@]} "$cur_remote" &
+    ssh_master_pid=$!
+fi
+
 for i in "${prf_indexes[@]}"; do
 
     profile_ref="profile_$i";
@@ -212,3 +217,7 @@ for i in "${prf_indexes[@]}"; do
     fi
 
 done
+
+if [[ -n $ssh_master_pid ]] ;  then
+    kill $ssh_master_pid
+fi
