@@ -27,7 +27,7 @@ unison_args=(                   # applied for every unison call
 
 locations=(user@home user@laptop user@work) # where I am
 remotes=(user@server user@server user@server) # where to sync to
-unison_dirs=($HOME/.unison $HOME/.unison $HOME/.unison)
+unison_dirs=($HOME/.unison $HOME/.unison $HOME/.unison) # optional: to use unisons' *.prf files
 
 # variables
 
