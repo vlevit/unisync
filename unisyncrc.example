@@ -12,16 +12,16 @@ ssh_master=(ssh -N -M -S "$ssh_socket")
 unison_args=(                   # applied for every unison call
     -sshargs "-C -S $ssh_socket"
     -batch
-    -backup="Name *"
-    -backup="Name .*"           # dot files
-    -backuploc=local
-    -maxbackups=2
+    -backup "Name *"
+    -backup "Name .*"           # dot files
+    -backuploc local
+    -maxbackups 2
     -times
-    -force=newer
+    -force newer
     # ignore list
-    -ignore="Name *~"
-    -ignore="Name #*#"
-    -ignore="Name *.tmp"
+    -ignore "Name *~"
+    -ignore "Name #*#"
+    -ignore "Name *.tmp"
 )
 
 
