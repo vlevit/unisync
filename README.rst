@@ -10,20 +10,33 @@ Usage
 -----
 
 Sync all files::
+
   $ unisync
+
 Sync individual profiles::
+
   $ unisync firefox emacs bash
+
 Sync groups of profiles::
+
   $ unisync configs documents
 
 List all available profiles::
+
   $ unisync -l
+
 List all available groups::
+
   $ unisync -g
+
 Print commands but don't run them::
+
   $ unisync -d
+
 Specify Unison arguments::
+
   $ unisync [profiles|groups] -auto=false -ignore "Name junk"
+
 
 Configuration file
 ------------------
