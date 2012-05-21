@@ -36,36 +36,36 @@ SYNC="/home/user/Sync"
 # profiles
 
 profile_01=unisyncrc
-local_01=("$HOME" "$HOME" "$HOME")
+local_01="$HOME"
 remote_01="$SYNC"
 args_01=(-path .unisyncrc)
 
 profile_02=unison
-local_02=("$HOME/.unison" "$HOME/.unison" "$HOME/.unison")
+local_02="$HOME/.unison"
 remote_02="$SYNC/.unison"
 args_02=(-ignore "Name ?*" -ignorenot "Name *.prf")
 
 profile_10=shell
-local_10=("$HOME" "$HOME" "$HOME")
+local_10="$HOME"
 remote_10="$SYNC/configs"
 args_10=(-path .bashrc -path .bash_profile -path .bash_logout)
 
 profile_20=hg
-local_20=("$HOME" "$HOME" "$HOME")
+local_20="$HOME"
 remote_20="$SYNC/configs"
 args_20=(-path .hgrc)
 
 profile_21=git
-local_21=("$HOME" "$HOME" "$HOME")
+local_21="$HOME"
 remote_21="$SYNC/configs"
 args_21=(-path .gitconfig)
 
 profile_30=music
-local_30=("$HOME/Music" "$HOME/Music" "$HOME/home/Music")
-remote_30="$SYNC/Music"
+local_30="$HOME/Music"
+remote_30=("$SYNC/HomeMusic" "$SYNC/LaptopMusic" "$SYNC/WorkMusic")
 
 profile_31=documents
-local_31=("$HOME/Docs" "$HOME/Docs" "$HOME/home/Docs")
+local_31=("$HOME/Docs" "$HOME/Docs" "$HOME/HomeDocs")
 remote_31="$SYNC/Docs"
 
 # groups

@@ -195,11 +195,24 @@ for i in "${prf_indexes[@]}"; do
     # no way to achieve indirect expansion to array element, so use eval
     args_ref="args_$i";
     eval args='("${'$args_ref'[@]}")'
+
     locals_ref="local_$i"
-    eval local='("${'$locals_ref'['$location_index']}")'
-    
-    remote_ref="remote_$i" ;
-    remote="${!remote_ref}"
+    eval local_len='"${#'$locals_ref'[@]}"'
+    if (( $local_len == 1 )) ; then
+        local_index=0
+    else
+        local_index=$location_index
+    fi
+    eval local='"${'$locals_ref'['$local_index']}"'
+
+    remotes_ref="remote_$i"
+    eval remote_len='"${#'$remotes_ref'[@]}"'
+    if (( $remote_len == 1 )) ; then
+        remote_index=0
+    else
+        remote_index=$location_index
+    fi
+    eval remote='"${'$remotes_ref'['$remote_index']}"'
     remote="ssh://${cur_remote}/$remote"
     
     info "$profile: $local <---> $remote"
