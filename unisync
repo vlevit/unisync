@@ -10,16 +10,22 @@ function error
     echo "Error: $@" >&2
 }
 
-if [[ -z "$UNISYNCRC" ]] ; then
-    UNISYNCRC="$HOME"/.unisyncrc
-fi
 
-if [[ -r "$UNISYNCRC" ]] ; then
-    source "$UNISYNCRC"
-else
-    error "problem reading $UNISYNCRC"
-    exit 1
-fi
+# source config file, may exit
+function source_config
+{
+    if [[ -z "$UNISYNCRC" ]] ; then
+        UNISYNCRC="$HOME"/.unisyncrc
+    fi
+
+    if [[ -r "$UNISYNCRC" ]] ; then
+        source "$UNISYNCRC"
+    else
+        error "problem reading $UNISYNCRC"
+        exit 1
+    fi
+}
+
 
 function usage
 {
@@ -44,6 +50,7 @@ function usage
 
 }
 
+
 # check if the first argument is equal to at least one of the remaining arguments
 function is_one_of
 {
@@ -57,180 +64,234 @@ function is_one_of
     return 1
 }
 
-all_profiles=()
-for p in "${!profile_@}" ; do
-    all_profiles+=("${!p}")
-done
 
-all_groups=()
-for g in "${!group_@}" ; do
-    all_groups+=("${g#group_}")
-done
+# set all_profiles and all_groups
+function read_all_profiles_and_groups
+{
+    all_profiles=()
+    for p in "${!profile_@}" ; do
+        all_profiles+=("${!p}")
+    done
 
-dry_run=0
-case "$1" in
-    -l|--list)
-        echo "${all_profiles[@]}"
-        exit 0
-        ;;
-    -g|--groups)
-        echo "${all_groups[@]}"
-        exit 0
-        ;;
-    -d|--dry-run)
-        dry_run=1
-        shift
-        ;;
-    -h|--help)
-        usage
-        exit 0
-        ;;
-esac
+    all_groups=()
+    for g in "${!group_@}" ; do
+        all_groups+=("${g#group_}")
+    done
+}
 
-cmd_args=()
-profiles=()
-bool_args=(
-    -auto -batch -fat -group -owner -silent -terse -times -version
-    -backups -addversionno -backups -confirmbigdel
-    -confirmmerge -contactquietly -dontchmod -dumbtty
-    -halfduplex -ignorearchives -ignoreinodenumbers -ignorelocks
-    -killserver -log -numericids -rsync -selftest -showarchive
-    -sortbysize -sortnewfirst -stream -xferbycopying)
 
-while (( $# > 0 )) ; do
-    arg1="$1"
-    arg2="$2"
-    # arg1 is an option
-    if [[ "${arg1:0:1}" == "-" ]] ; then
-        is_boolean=1
-        is_one_of "$arg1" "${bool_args[@]}" ||
+# process arguments: set dry_run, cmd_args and profiles
+# may exit
+function process_args
+{
+    dry_run=0
+    case "$1" in
+        -l|--list)
+            echo "${all_profiles[@]}"
+            exit 0
+            ;;
+        -g|--groups)
+            echo "${all_groups[@]}"
+            exit 0
+            ;;
+        -d|--dry-run)
+            dry_run=1
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+    esac
+
+    cmd_args=()
+    profiles=()
+    bool_args=(
+        -auto -batch -fat -group -owner -silent -terse -times -version
+        -backups -addversionno -backups -confirmbigdel
+        -confirmmerge -contactquietly -dontchmod -dumbtty
+        -halfduplex -ignorearchives -ignoreinodenumbers -ignorelocks
+        -killserver -log -numericids -rsync -selftest -showarchive
+        -sortbysize -sortnewfirst -stream -xferbycopying)
+
+    while (( $# > 0 )) ; do
+        arg1="$1"
+        arg2="$2"
+        # arg1 is an option
+        if [[ "${arg1:0:1}" == "-" ]] ; then
+            is_boolean=1
+            is_one_of "$arg1" "${bool_args[@]}" ||
             is_one_of "$arg1" "${bool_args[@]/%/=true}" ||
             is_one_of "$arg1" "${bool_args[@]/%/=false}" ||
             is_boolean=0
-        if (( $is_boolean == 1 )) ; then
-            shift
-            cmd_args+=("$arg1")
-        else
-            shift 2
-            if (( $? > 0 )) ; then
-                echo "One more argument expected"
-                exit 2
-            fi
-            cmd_args+=("$arg1" "$arg2")
-        fi
-    # arg1 is a profile
-    else
-        if is_one_of "$arg1" "${all_groups[@]}" ; then
-            eval group_profiles='("${'group_${arg1}'[@]}")'
-            # do not add duplicates
-            for profile in "${group_profiles[@]}"; do
-                is_one_of "$profile" "${profiles[@]}"
-                if (( $? != 0 )) ; then
-                    if is_one_of "$profile" "${all_profiles[@]}" ; then
-                        profiles+=("$profile")
-                    else
-                        error "unknown profile: $profile"
-                        exit 1
-                    fi
+            if (( $is_boolean == 1 )) ; then
+                shift
+                cmd_args+=("$arg1")
+            else
+                shift 2
+                if (( $? > 0 )) ; then
+                    echo "One more argument expected"
+                    exit 2
                 fi
-            done
-        elif is_one_of "$arg1" "${all_profiles[@]}" ; then
-            # do not add duplicates
-            is_one_of "$arg1" "${profiles[@]}" ||
-                profiles+=("$arg1")
+                cmd_args+=("$arg1" "$arg2")
+            fi
+        # arg1 is a profile
         else
-            error "unknown profile or group name: $arg1"
-            exit 1
-        fi
-        shift
-    fi
-done
-
-# no specified profiles means all profiles
-if (( "${#profiles[@]}" == "0" )) ; then
-    profiles=("${all_profiles[@]}")
-fi
-
-info "profiles to sync: ${profiles[@]}"
-
-location_found=0
-for i in "${!locations[@]}"; do
-    if [[ "${locations[i]}" == "$location" ]] ; then
-        location_index="$i"
-        cur_remote="${remotes[$i]}"
-        cur_unison_dir="${unison_dirs[$i]}"
-        location_found=1
-    fi
-done
-
-if (( "$location_found" == 0 )) ; then
-    error "Can't determine your location: $location. "\
-         "Known locations are: ${locations[@]}"
-    exit 1
-else
-    info "location: $location, unison_dir: $cur_unison_dir, remote: $cur_remote"
-fi
-
-# get indexes of specified profiles
-prf_indexes=()
-for profile in "${profiles[@]}" ; do
-    for p in "${!profile_@}" ; do
-        index="${p#profile_}"
-        if [[ "$profile" == "${!p}" ]] ; then
-            prf_indexes+=("$index")
+            if is_one_of "$arg1" "${all_groups[@]}" ; then
+                eval group_profiles='("${'group_${arg1}'[@]}")'
+                # do not add duplicates
+                for profile in "${group_profiles[@]}"; do
+                    is_one_of "$profile" "${profiles[@]}"
+                    if (( $? != 0 )) ; then
+                        if is_one_of "$profile" "${all_profiles[@]}" ; then
+                            profiles+=("$profile")
+                        else
+                            error "unknown profile: $profile"
+                            exit 1
+                        fi
+                    fi
+                done
+            elif is_one_of "$arg1" "${all_profiles[@]}" ; then
+                # do not add duplicates
+                is_one_of "$arg1" "${profiles[@]}" ||
+                profiles+=("$arg1")
+            else
+                error "unknown profile or group name: $arg1"
+                exit 1
+            fi
+            shift
         fi
     done
-done
 
-if [[ -n "$ssh_master" && $dry_run == 0 ]] ;  then
-    ${ssh_master[@]} "$cur_remote" &
-    ssh_master_pid=$!
-fi
-
-for i in "${prf_indexes[@]}"; do
-
-    profile_ref="profile_$i";
-    profile="${!profile_ref}"
-
-    # no way to achieve indirect expansion to array element, so use eval
-    args_ref="args_$i";
-    eval args='("${'$args_ref'[@]}")'
-
-    locals_ref="local_$i"
-    eval local_len='"${#'$locals_ref'[@]}"'
-    if (( $local_len == 1 )) ; then
-        local_index=0
-    else
-        local_index=$location_index
-    fi
-    eval local='"${'$locals_ref'['$local_index']}"'
-
-    remotes_ref="remote_$i"
-    eval remote_len='"${#'$remotes_ref'[@]}"'
-    if (( $remote_len == 1 )) ; then
-        remote_index=0
-    else
-        remote_index=$location_index
-    fi
-    eval remote='"${'$remotes_ref'['$remote_index']}"'
-    remote="ssh://${cur_remote}/$remote"
-    
-    info "$profile: $local <---> $remote"
-    if [ -f  "$cur_unison_dir/$profile.prf" ] ; then
-        arg=("$profile")
-    else
-        arg=()
-    fi
-    if (( $dry_run == 1 )) ; then
-        info dry-run: unison "${arg[@]}" "$local" "$remote" \
-            "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
-    else
-        unison "${arg[@]}" "$local" "$remote" \
-            "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
+    # no specified profiles means all profiles
+    if (( "${#profiles[@]}" == "0" )) ; then
+        profiles=("${all_profiles[@]}")
     fi
 
-done
+    info "profiles to sync: ${profiles[@]}"
+}
 
-if [[ -n $ssh_master_pid ]] ;  then
-    kill $ssh_master_pid
-fi
+
+# determine location: set location_index, cur_remote and cur_unison_dir
+# exit on error
+function determine_location
+{
+    location_found=0
+    for i in "${!locations[@]}"; do
+        if [[ "${locations[i]}" == "$location" ]] ; then
+            location_index="$i"
+            cur_remote="${remotes[$i]}"
+            cur_unison_dir="${unison_dirs[$i]}"
+            location_found=1
+        fi
+    done
+
+    if (( "$location_found" == 0 )) ; then
+        error "Can't determine your location: $location. "\
+         "Known locations are: ${locations[@]}"
+        exit 1
+    else
+        info "location: $location, unison_dir: $cur_unison_dir, remote: $cur_remote"
+    fi
+}
+
+
+# get indexes of specified profiles: set prf_indexes
+function get_prf_indexes
+{
+    prf_indexes=()
+    for profile in "${profiles[@]}" ; do
+        for p in "${!profile_@}" ; do
+            index="${p#profile_}"
+            if [[ "$profile" == "${!p}" ]] ; then
+                prf_indexes+=("$index")
+            fi
+        done
+    done
+}
+
+
+# run ssh to establish master connection when appropriate
+# set ssh_master_pid
+function maybe_run_ssh_master
+{
+    if [[ -n "$ssh_master" && $dry_run == 0 ]] ;  then
+        ${ssh_master[@]} "$cur_remote" &
+        ssh_master_pid=$!
+    fi
+}
+
+
+# sync profiles: use prf_indexes to determine profiles, local and remote roots
+# also use cur_remote and cur_unison_dir
+function sync_profiles
+{
+    for i in "${prf_indexes[@]}"; do
+
+        profile_ref="profile_$i";
+        profile="${!profile_ref}"
+
+        # no way to achieve indirect expansion to array element, so use eval
+        args_ref="args_$i";
+        eval args='("${'$args_ref'[@]}")'
+
+        locals_ref="local_$i"
+        eval local_len='"${#'$locals_ref'[@]}"'
+        if (( $local_len == 1 )) ; then
+            local_index=0
+        else
+            local_index=$location_index
+        fi
+        eval local='"${'$locals_ref'['$local_index']}"'
+
+        remotes_ref="remote_$i"
+        eval remote_len='"${#'$remotes_ref'[@]}"'
+        if (( $remote_len == 1 )) ; then
+            remote_index=0
+        else
+            remote_index=$location_index
+        fi
+        eval remote='"${'$remotes_ref'['$remote_index']}"'
+        remote="ssh://${cur_remote}/$remote"
+        
+        info "$profile: $local <---> $remote"
+        if [ -f  "$cur_unison_dir/$profile.prf" ] ; then
+            arg=("$profile")
+        else
+            arg=()
+        fi
+        if (( $dry_run == 1 )) ; then
+            info dry-run: unison "${arg[@]}" "$local" "$remote" \
+                "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
+        else
+            unison "${arg[@]}" "$local" "$remote" \
+                "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
+        fi
+
+    done
+}
+
+
+# release ssh master connection when appropriate
+function maybe_kill_ssh_master
+{
+    if [[ -n $ssh_master_pid ]] ;  then
+        kill $ssh_master_pid
+    fi
+}
+
+
+function main
+{
+    source_config
+    read_all_profiles_and_groups
+    process_args "$@"
+    determine_location
+    get_prf_indexes
+    maybe_run_ssh_master
+    sync_profiles
+    maybe_kill_ssh_master
+}
+
+
+main "$@"
