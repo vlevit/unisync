@@ -27,6 +27,17 @@ function source_config
 }
 
 
+# unset all variables set in the config file
+function unset_config
+{
+    unset location ssh_socket ssh_master unison_args locations remotes unison_dirs
+    for p in "${!profile_@}" ; do unset "$p" ; done
+    for l in "${!local_@}" ; do unset "$l" ; done
+    for r in "${!remote_@}" ; do unset "$r" ; done
+    for a in "${!args_@}" ; do unset "$a" ; done
+}
+
+
 function usage
 {
     echo "         $(basename $0) -l|-g|-d|-h"
@@ -196,7 +207,8 @@ function determine_location
 }
 
 
-# get indexes of specified profiles: set prf_indexes
+# get indexes of profiles: set prf_indexes and
+# unisyncrc_index if such profile exists
 function get_prf_indexes
 {
     prf_indexes=()
@@ -205,6 +217,9 @@ function get_prf_indexes
             index="${p#profile_}"
             if [[ "$profile" == "${!p}" ]] ; then
                 prf_indexes+=("$index")
+                if [[ "$profile" == unisyncrc ]] ; then
+                    unisyncrc_index="$index"
+                fi
             fi
         done
     done
@@ -222,52 +237,57 @@ function maybe_run_ssh_master
 }
 
 
-# sync profiles: use prf_indexes to determine profiles, local and remote roots
-# also use cur_remote and cur_unison_dir
+# sync profile specified by index as the first argument
+function sync_profile
+{
+    i="$1"
+    profile_ref="profile_$i";
+    profile="${!profile_ref}"
+
+    # no way to achieve indirect expansion to array element, so use eval
+    args_ref="args_$i";
+    eval args='("${'$args_ref'[@]}")'
+
+    locals_ref="local_$i"
+    eval local_len='"${#'$locals_ref'[@]}"'
+    if (( $local_len == 1 )) ; then
+        local_index=0
+    else
+        local_index=$location_index
+    fi
+    eval local='"${'$locals_ref'['$local_index']}"'
+
+    remotes_ref="remote_$i"
+    eval remote_len='"${#'$remotes_ref'[@]}"'
+    if (( $remote_len == 1 )) ; then
+        remote_index=0
+    else
+        remote_index=$location_index
+    fi
+    eval remote='"${'$remotes_ref'['$remote_index']}"'
+    remote="ssh://${cur_remote}/$remote"
+
+    info "$profile: $local <---> $remote"
+    if [ -f  "$cur_unison_dir/$profile.prf" ] ; then
+        arg=("$profile")
+    else
+        arg=()
+    fi
+    if (( $dry_run == 1 )) ; then
+        info dry-run: unison "${arg[@]}" "$local" "$remote" \
+            "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
+    else
+        unison "${arg[@]}" "$local" "$remote" \
+            "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
+    fi
+}
+
+
+# sync profiles whose indexes are in prf_indexes
 function sync_profiles
 {
     for i in "${prf_indexes[@]}"; do
-
-        profile_ref="profile_$i";
-        profile="${!profile_ref}"
-
-        # no way to achieve indirect expansion to array element, so use eval
-        args_ref="args_$i";
-        eval args='("${'$args_ref'[@]}")'
-
-        locals_ref="local_$i"
-        eval local_len='"${#'$locals_ref'[@]}"'
-        if (( $local_len == 1 )) ; then
-            local_index=0
-        else
-            local_index=$location_index
-        fi
-        eval local='"${'$locals_ref'['$local_index']}"'
-
-        remotes_ref="remote_$i"
-        eval remote_len='"${#'$remotes_ref'[@]}"'
-        if (( $remote_len == 1 )) ; then
-            remote_index=0
-        else
-            remote_index=$location_index
-        fi
-        eval remote='"${'$remotes_ref'['$remote_index']}"'
-        remote="ssh://${cur_remote}/$remote"
-        
-        info "$profile: $local <---> $remote"
-        if [ -f  "$cur_unison_dir/$profile.prf" ] ; then
-            arg=("$profile")
-        else
-            arg=()
-        fi
-        if (( $dry_run == 1 )) ; then
-            info dry-run: unison "${arg[@]}" "$local" "$remote" \
-                "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
-        else
-            unison "${arg[@]}" "$local" "$remote" \
-                "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
-        fi
-
+        sync_profile "$i"
     done
 }
 
@@ -278,6 +298,7 @@ function maybe_kill_ssh_master
     if [[ -n $ssh_master_pid ]] ;  then
         kill $ssh_master_pid
     fi
+    ssh_master_pid=
 }
 
 
@@ -289,6 +310,18 @@ function main
     determine_location
     get_prf_indexes
     maybe_run_ssh_master
+    if [[ -n "$unisyncrc_index" ]] ; then
+        sync_profile "$unisyncrc_index"
+        ssh_master_old=("${ssh_master[@]}")
+        unset_config
+        source_config
+        [[ "${ssh_master[@]}" != "${ssh_master_old[@]}" ]] && maybe_kill_ssh_master
+        read_all_profiles_and_groups
+        process_args "$@"
+        determine_location
+        get_prf_indexes
+        [[ "${ssh_master[@]}" != "${ssh_master_old[@]}" ]] && maybe_run_ssh_master
+    fi
     sync_profiles
     maybe_kill_ssh_master
 }

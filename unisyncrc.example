@@ -35,6 +35,8 @@ SYNC="/home/user/Sync"
 
 # profiles
 
+# profile 'unisyncrc' is treated specially: if it is updated during
+# synchronization, its contents is re-read
 profile_01=unisyncrc
 local_01="$HOME"
 remote_01="$SYNC"
