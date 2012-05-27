@@ -3,11 +3,9 @@
 location="$USER@$HOSTNAME"      # must be unique for each host
 
 # reduce ssh connection time and ask password/passphrase only once
-ssh_socket="$HOME/.ssh/ssh-socket-unison-$$-%r@%h:%p"
-ssh_master=(ssh -N -M -S "$ssh_socket")
-
-# uncomment the following line to disable creation of ssh socket
-# ssh_master=
+# (control socket and remote will be added automatically)
+# comment the following line to disable connection sharing
+ssh_master=(ssh -N -M -S)
 
 unison_args=(                   # applied for every unison call
     -sshargs "-C -S $ssh_socket"

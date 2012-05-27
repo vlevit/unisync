@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ssh_socket="$HOME/.ssh/ssh-socket-unison-$$"
+
 function info
 {
     echo ":: $@" >&2
@@ -30,7 +32,7 @@ function source_config
 # unset all variables set in the config file
 function unset_config
 {
-    unset location ssh_socket ssh_master unison_args locations remotes unison_dirs
+    unset location ssh_master unison_args locations remotes unison_dirs
     for p in "${!profile_@}" ; do unset "$p" ; done
     for l in "${!local_@}" ; do unset "$l" ; done
     for r in "${!remote_@}" ; do unset "$r" ; done
@@ -231,8 +233,12 @@ function get_prf_indexes
 function maybe_run_ssh_master
 {
     if [[ -n "$ssh_master" && $dry_run == 0 ]] ;  then
-        ${ssh_master[@]} "$cur_remote" &
+        ${ssh_master[@]} -S "$ssh_socket" "$cur_remote" &
         ssh_master_pid=$!
+        # wait for socket control: ssh can ask password
+        while true ; do
+            [[ -S "$ssh_socket" ]] && break || sleep 0.1
+        done
     fi
 }
 
