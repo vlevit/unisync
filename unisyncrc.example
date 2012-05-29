@@ -7,6 +7,9 @@ location="$USER@$HOSTNAME"      # must be unique for each host
 # comment the following line to disable connection sharing
 ssh_master=(ssh -N -M -S)
 
+# specify a file for a short status summary of synchronized profiles
+# summary=/tmp/unisync_summary
+
 unison_args=(                   # applied for every unison call
     -sshargs "-C -S $ssh_socket"
     -batch
