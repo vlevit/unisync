@@ -237,7 +237,15 @@ function maybe_run_ssh_master
         ssh_master_pid=$!
         # wait for socket control: ssh can ask password
         while true ; do
-            [[ -S "$ssh_socket" ]] && break || sleep 0.1
+            if [[ -S "$ssh_socket" ]] ; then
+                break
+            elif kill -0 "$ssh_master_pid" 2>/dev/null ; then
+                sleep 0.1
+            else
+                ssh_master_pid=
+                error "master ssh exited accidentally"
+                return 1
+            fi
         done
     fi
 }
