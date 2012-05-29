@@ -238,6 +238,7 @@ function maybe_run_ssh_master
         # wait for socket control: ssh can ask password
         while true ; do
             if [[ -S "$ssh_socket" ]] ; then
+                trap maybe_kill_ssh_master EXIT
                 break
             elif kill -0 "$ssh_master_pid" 2>/dev/null ; then
                 sleep 0.1
