@@ -32,7 +32,7 @@ function source_config
 # unset all variables set in the config file
 function unset_config
 {
-    unset location ssh_master unison_args locations remotes unison_dirs
+    unset location ssh_master summary unison_args locations remotes unison_dirs
     for p in "${!profile_@}" ; do unset "$p" ; done
     for l in "${!local_@}" ; do unset "$l" ; done
     for r in "${!remote_@}" ; do unset "$r" ; done
