@@ -1,0 +1,38 @@
+#!/bin/bash
+
+function usage
+{
+    echo "Usage: ${0##*/} [newer|larger|local|remote] CURRENT1 CURRENT2 NEW [COLLISIONS_FILE]" >&2
+}
+
+(($# < 4 || $# > 5)) && { usage; exit 2; }
+
+whowins="$1"; cur1="$2"; cur2="$3"; new="$4"; log="$5"
+
+case "$whowins" in
+    newer)
+        [[ "$cur1" -nt "$cur2" ]] && win="$cur1" ;;
+    larger)
+        [[ "$(stat -c %s "$cur1")" -ge "$(stat -c %s "$cur2")" ]] && win="$cur1" ;;
+    "local")
+        win="$cur1" ;;
+    remote)
+        win="$cur2" ;;
+    *)
+        usage; exit 2
+esac
+
+[[ "$win" == "$cur1" ]] && bak="$cur2" || { win="$cur2" ; bak="$cur1" ; }
+
+bakdate=$(date --date=@$(stat -c %Y "$bak") +%Y-%m-%d_%H%M%S)
+orig_name="${bak#*.unison.merge[0-9]-}"
+dir="${bak%/*}"
+[[ "$dir" == "$bak" ]] && dir= || dir="$dir/"
+newbak_name=".bak.$bakdate.$orig_name"
+newbak_path="$dir$newbak_name"
+
+if [[ -n "$log" ]] ; then
+    echo "$dir$orig_name" >> "$log"
+fi
+
+mv "$win" "$new" && mv "$bak" "$newbak_path"
