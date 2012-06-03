@@ -1,0 +1,21 @@
+#!/bin/bash
+
+unisync 2>&1 | (while read -r line
+do
+    sub=":: profiles to sync:"
+    if [[ "$line" == "$sub"* ]] ; then
+        prof_count=$(echo "${line#$sub}" | wc -w)
+        let i=0
+        let percent=0
+        continue
+    fi
+    [[ "$line" == ":: location:"* ]] && continue
+    if [[ "$line" == ":: "*:* ]] ; then
+        echo $percent
+        let i+=1
+        let percent=$i*100/$prof_count
+    fi
+done ; echo $percent) | zenity --progress --no-cancel --auto-close \
+       --title unisync --text synchronizing...
+zenity --info --timeout 7 --title=unisync \
+       --text "<tt>$(cat /tmp/unisync_summary)</tt>"
