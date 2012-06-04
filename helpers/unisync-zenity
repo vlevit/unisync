@@ -1,6 +1,6 @@
 #!/bin/bash
 
-unisync 2>&1 | (while read -r line
+unisync "$@" 2>&1 | (while read -r line
 do
     sub=":: profiles to sync:"
     if [[ "$line" == "$sub"* ]] ; then
