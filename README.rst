@@ -44,3 +44,12 @@ Configuration file
 unisync looks up .unisyncrc in the user's home directory. If UNISYNCRC
 environment variable is set, it overrides the default path. A configuration file
 is a bash file by itself. Look at unisyncrc.example for an example.
+
+License
+-------
+
+Copyright (C) 2012 Vyacheslav Levit
+
+Free use of this software is granted under the terms of the GNU General Public
+License version 3 or (at your opinion) any later version. See COPYING file for
+more information.

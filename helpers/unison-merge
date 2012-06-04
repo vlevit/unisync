@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# script suitable to be passed as a merge command to Unison merge option
+# Copyright (C) 2012  Vyacheslav Levit
+# License: GPLv3 or later. See COPYING or <http://www.gnu.org/licenses/.
+
 function usage
 {
     echo "Usage: ${0##*/} [newer|larger|local|remote] CURRENT1 CURRENT2 NEW \
