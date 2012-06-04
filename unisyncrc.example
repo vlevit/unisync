@@ -1,34 +1,51 @@
 #!/bin/bash
 
-location="$USER@$HOSTNAME"      # must be unique for each host
+location="$USER@$HOSTNAME"                    # must be unique for each host
+locations=(user@home user@laptop user@work)   # where I am
+remotes=(user@server user@server user@server) # where to sync profiles to
+unison_dirs=($HOME/.unison $HOME/.unison $HOME/.unison) # optional: to use unisons' *.prf files
 
 # reduce ssh connection time and ask password/passphrase only once
 # (control socket and remote will be added automatically)
 # comment the following line to disable connection sharing
 ssh_master=(ssh -N -M -S)
 
-# specify a file for a short status summary of synchronized profiles
+## specify a file for a short status summary of synchronized profiles
 # summary=/tmp/unisync_summary
 
-unison_args=(                   # applied for every unison call
-    -sshargs "-C -S $ssh_socket"
-    -batch
+## collision logging and notifications (unison-merge should be enabled)
+# collision_log=/tmp/unison_collisions
+# [[ -v DISPLAY ]] && type notify-send &>/dev/null && \
+#     collision_notify="notify-send -a unisync collision:"
+
+backup_args=(
     -backup "Name *"
     -backup "Name .*"           # dot files
     -backuploc local
     -maxbackups 2
-    -times
-    -force newer
-    # ignore list
+)
+
+merge_args=(
+    -merge "Regex .* -> unison-merge newer CURRENT1 CURRENT2 NEW \
+           $collision_log '$collision_notify'"
+)
+
+ignoe_args=(
     -ignore "Name *~"
     -ignore "Name #*#"
     -ignore "Name *.tmp"
 )
 
-
-locations=(user@home user@laptop user@work) # where I am
-remotes=(user@server user@server user@server) # where to sync to
-unison_dirs=($HOME/.unison $HOME/.unison $HOME/.unison) # optional: to use unisons' *.prf files
+# unison_args are passed to unison on every unison execution
+unison_args=(
+    -sshargs "-C -S $ssh_socket"
+    -batch
+    -times
+    # -force newer
+    "${backup_args[@]}"         # backup enabled
+    # "${merge_args[@]}"        # automatic conflict resolution disabled
+    "${ignoe_args[@]}"
+)
 
 # variables
 

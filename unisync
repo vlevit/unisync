@@ -32,7 +32,8 @@ function source_config
 # unset all variables set in the config file
 function unset_config
 {
-    unset location ssh_master summary unison_args locations remotes unison_dirs
+    unset location ssh_master summary unison_args locations remotes unison_dirs \
+        collision_log collision_notify
     for p in "${!profile_@}" ; do unset "$p" ; done
     for l in "${!local_@}" ; do unset "$l" ; done
     for r in "${!remote_@}" ; do unset "$r" ; done
@@ -75,6 +76,13 @@ function is_one_of
         fi
     done
     return 1
+}
+
+
+# delete log contents if the log already exists
+function erase_log
+{
+    [[ -n "$collision_log" && -e "$collision_log" ]] && > "$collision_log"
 }
 
 
@@ -347,6 +355,7 @@ function maybe_kill_ssh_master
 function main
 {
     source_config
+    erase_log    
     read_all_profiles_and_groups
     process_args "$@"
     determine_location
@@ -357,6 +366,7 @@ function main
         ssh_master_old=("${ssh_master[@]}")
         unset_config
         source_config
+        erase_log
         [[ "${ssh_master[@]}" != "${ssh_master_old[@]}" ]] && maybe_kill_ssh_master
         read_all_profiles_and_groups
         process_args "$@"

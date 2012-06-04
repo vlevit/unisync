@@ -2,12 +2,13 @@
 
 function usage
 {
-    echo "Usage: ${0##*/} [newer|larger|local|remote] CURRENT1 CURRENT2 NEW [COLLISIONS_FILE]" >&2
+    echo "Usage: ${0##*/} [newer|larger|local|remote] CURRENT1 CURRENT2 NEW \
+        [COLLISION_FILE] [COMMAND]" >&2
 }
 
-(($# < 4 || $# > 5)) && { usage; exit 2; }
+(($# < 4 || $# > 6)) && { usage; exit 2; }
 
-whowins="$1"; cur1="$2"; cur2="$3"; new="$4"; log="$5"
+whowins="$1"; cur1="$2"; cur2="$3"; new="$4"; log="$5"; cmd="$6"
 
 case "$whowins" in
     newer)
@@ -31,8 +32,6 @@ dir="${bak%/*}"
 newbak_name=".bak.$bakdate.$orig_name"
 newbak_path="$dir$newbak_name"
 
-if [[ -n "$log" ]] ; then
-    echo "$dir$orig_name" >> "$log"
-fi
-
+[[ -n "$log" ]] && echo "$dir$orig_name" >> "$log"
+[[ -n "$cmd" ]] && sh -c "$cmd $dir$orig_name" &
 mv "$win" "$new" && mv "$bak" "$newbak_path"
