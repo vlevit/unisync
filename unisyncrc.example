@@ -15,7 +15,7 @@ ssh_master=(ssh -N -M -S)
 
 ## collision logging and notifications (unison-merge should be enabled)
 # collision_log=/tmp/unison_collisions
-# [[ -v DISPLAY ]] && type notify-send &>/dev/null && \
+# [[ -n DISPLAY ]] && type notify-send &>/dev/null && \
 #     collision_notify="notify-send -a unisync collision:"
 
 backup_args=(
