@@ -275,17 +275,30 @@ function maybe_run_ssh_master
 
 first_print=1
 
-# print profile (first arg) and status (second arg) to summary file or stdout
-function print_summary
+function log_and_notify
 {
-    if [[ "$first_print" == 1 ]] ; then
-        first_print=0
-        > "$summary"       # erase summary file
+    status="$1"
+    profile="$2"
+    case $status in
+        0) message="success";;
+        1) message="some files skipped";;
+        2) message="some failures";;
+        3) message="fatal error";;
+        *) message="abnormal exit status $status";;
+    esac
+    if [[ -n "$summary" ]] ; then
+        if [[ "$first_print" == 1 ]] ; then
+            first_print=0
+            > "$summary"       # erase summary file
+        fi
+        if [[ "$summary" == "-" ]] ; then
+            printf "%-14s %s\n" "$profile" "$message"
+        else
+            printf "%-14s %s\n" "$profile" "$message" >> "$summary"
+        fi
     fi
-    if [[ "$summary" == "-" ]] ; then
-        printf "%-14s %s\n" "$1" "$2"
-    else
-        printf "%-14s %s\n" "$1" "$2" >> "$summary"
+    if [[ -n "$sync_error_notify" ]] && (( "$status" != 0 )) ; then
+        sh -c "$sync_error_notify '$profile: $message'" &
     fi
 }
 
@@ -332,16 +345,7 @@ function sync_profile
     else
         unison "${arg[@]}" "$local" "$remote" \
             "${unison_args[@]}" "${args[@]}" "${cmd_args[@]}"
-        status=$?
-        if [[ -n "$summary" ]] ; then
-            case $status in
-                0) print_summary "$profile" "success";;
-                1) print_summary "$profile" "some files skipped";;
-                2) print_summary "$profile" "some failures";;
-                3) print_summary "$profile" "fatal error";;
-                *) print_summary "$profile" "unknown exit status $status";;
-            esac
-        fi
+        log_and_notify $? "$profile"
     fi
 }
 

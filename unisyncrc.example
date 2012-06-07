@@ -10,13 +10,15 @@ unison_dirs=($HOME/.unison $HOME/.unison $HOME/.unison) # optional: to use uniso
 # comment the following line to disable connection sharing
 ssh_master=(ssh -N -M -S)
 
+## logging and notifications
+
 ## specify a file for a short status summary of synchronized profiles
 # summary=/tmp/unisync_summary
-
-## collision logging and notifications (unison-merge should be enabled)
-# collision_log=/tmp/unison_collisions
-# [[ -n DISPLAY ]] && type notify-send &>/dev/null && \
-#     collision_notify="notify-send -a unisync collision:"
+# collision_log=/tmp/unison_collisions # requires unison-merge
+# if [[ -n DISPLAY ]] && type notify-send &>/dev/null ; then
+#     collision_notify="notify-send -a unisync collision:" # requires unison-merge
+#     sync_error_notify="notify-send -a unisync"
+# fi
 
 backup_args=(
     -backup "Name *"
