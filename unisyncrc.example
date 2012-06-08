@@ -14,9 +14,9 @@ ssh_master=(ssh -N -M -S)
 
 ## specify a file for a short status summary of synchronized profiles
 # summary=/tmp/unisync_summary
-# collision_log=/tmp/unison_collisions # requires unison-merge
+# conflict_log=/tmp/unison_conflicts # requires unison-merge
 # if [[ -n DISPLAY ]] && type notify-send &>/dev/null ; then
-#     collision_notify="notify-send -a unisync collision:" # requires unison-merge
+#     conflict_notify="notify-send -a unisync conflict:" # requires unison-merge
 #     sync_error_notify="notify-send -a unisync"
 # fi
 
@@ -29,7 +29,7 @@ backup_args=(
 
 merge_args=(
     -merge "Regex .* -> unison-merge newer CURRENT1 CURRENT2 NEW \
-           $collision_log '$collision_notify'"
+           $conflict_log '$conflict_notify'"
 )
 
 ignoe_args=(

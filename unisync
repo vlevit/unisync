@@ -46,7 +46,7 @@ function source_config
 function unset_config
 {
     unset location ssh_master summary unison_args locations remotes unison_dirs \
-        collision_log collision_notify
+        conflict_log conflict_notify
     for p in "${!profile_@}" ; do unset "$p" ; done
     for l in "${!local_@}" ; do unset "$l" ; done
     for r in "${!remote_@}" ; do unset "$r" ; done
@@ -95,7 +95,7 @@ function is_one_of
 # delete log contents if the log already exists
 function erase_log
 {
-    [[ -n "$collision_log" && -e "$collision_log" ]] && > "$collision_log"
+    [[ -n "$conflict_log" && -e "$conflict_log" ]] && > "$conflict_log"
 }
 
 

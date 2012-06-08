@@ -7,7 +7,7 @@
 function usage
 {
     echo "Usage: ${0##*/} [newer|larger|local|remote] CURRENT1 CURRENT2 NEW \
-        [COLLISION_FILE] [COMMAND]" >&2
+        [CONFLICT_FILE] [COMMAND]" >&2
 }
 
 (($# < 4 || $# > 6)) && { usage; exit 2; }
