@@ -85,6 +85,7 @@ args_21=(-path .gitconfig)
 profile_30=music
 local_30="$HOME/Music"
 remote_30=("$SYNC/HomeMusic" "$SYNC/LaptopMusic" "$SYNC/WorkMusic")
+auto_30=false                   # synchronize on demand
 
 profile_31=documents
 local_31=("$HOME/Docs" "$HOME/Docs" "$HOME/HomeDocs")
