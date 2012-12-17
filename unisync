@@ -201,8 +201,6 @@ function process_args
     # to sync all profiles with auto_xx not set to false
     if (( "${#profiles[@]}" == "0" )) ; then
         auto_mode=1
-    else
-        info "profiles to sync: ${profiles[@]}"
     fi
 
 }
@@ -237,18 +235,21 @@ function determine_location
 function get_prf_indexes
 {
     prf_indexes=()
+    prf_names=()
     if [[ "$auto_mode" == "1" ]] ; then
         for p in "${!profile_@}" ; do
             index="${p#profile_}"
             auto="auto_$index"
             if [[ "${!auto}" != "false" ]] ; then
                 prf_indexes+=("$index")
+                prf_names+=("${!p}")
                 if [[ "$p" == unisyncrc ]] ; then
                     unisyncrc_index="$index"
                 fi
             fi
         done
     else                        # the order of specified profiles matters
+        prf_names="${profiles[@]}"
         for profile in "${profiles[@]}" ; do
             for p in "${!profile_@}" ; do
                 index="${p#profile_}"
@@ -261,6 +262,7 @@ function get_prf_indexes
             done
         done
     fi
+    info "profiles to sync: ${prf_names[@]}"
 }
 
 
