@@ -380,7 +380,7 @@ function sync_profiles
 function maybe_kill_ssh_master
 {
     if [[ -n $ssh_master_pid ]] ;  then
-        kill $ssh_master_pid
+        kill -USR1 $ssh_master_pid
     fi
     ssh_master_pid=
 }
